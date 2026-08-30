@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#087f8c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="海癮出發">
+  <meta name="description" content="從竹北前往海癮咖啡的出發時間、路線與停車提醒">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <title>海癮咖啡｜開車時間軸</title>
+  <style>
+    :root {
+      --ocean: #087f8c;
+      --ocean-deep: #075667;
+      --ocean-soft: #dff5f3;
+      --sky: #eef9fb;
+      --sand: #fff8e9;
+      --sun: #f4a261;
+      --ink: #18333a;
+      --muted: #647b80;
+      --line: #cfe1e2;
+      --white: #ffffff;
+      --danger: #b64f45;
+      --shadow: 0 12px 32px rgba(21, 76, 86, .12);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 92% 3%, rgba(244,162,97,.18), transparent 28%),
+        linear-gradient(180deg, var(--sky), #f8fcfb 42%, var(--sand));
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, a { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+
+    .app {
+      width: min(100%, 760px);
+      margin: 0 auto;
+      padding: max(18px, env(safe-area-inset-top)) 16px calc(108px + env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .brand-small { color: var(--ocean); font-size: .78rem; font-weight: 800; letter-spacing: .08em; }
+    h1 { margin: 2px 0 0; font-size: clamp(1.55rem, 6vw, 2.25rem); line-height: 1.15; }
+    .today-pill {
+      flex: 0 0 auto;
+      padding: 8px 11px;
+      border: 1px solid rgba(8,127,140,.22);
+      border-radius: 999px;
+      color: var(--ocean-deep);
+      background: rgba(255,255,255,.72);
+      font-size: .82rem;
+      font-weight: 800;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 20px;
+      border-radius: 26px;
+      color: var(--white);
+      background: linear-gradient(135deg, var(--ocean-deep), var(--ocean));
+      box-shadow: var(--shadow);
+    }
+    .hero::before, .hero::after {
+      content: "";
+      position: absolute;
+      border: 10px solid rgba(255,255,255,.1);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero::before { width: 190px; height: 82px; right: -66px; top: -35px; }
+    .hero::after { width: 240px; height: 86px; left: -82px; bottom: -65px; }
+    .route-meta { display: flex; flex-wrap: wrap; gap: 8px; position: relative; z-index: 1; }
+    .route-meta span {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.13);
+      font-size: .8rem;
+      font-weight: 700;
+    }
+    .next-label { margin-top: 20px; color: rgba(255,255,255,.75); font-size: .8rem; font-weight: 700; }
+    .next-step { margin: 3px 0 0; font-size: clamp(1.75rem, 8vw, 3.2rem); line-height: 1.08; letter-spacing: -.03em; }
+    .next-detail { margin: 8px 0 0; color: rgba(255,255,255,.82); line-height: 1.55; }
+    .countdown { margin-top: 18px; display: flex; align-items: end; justify-content: space-between; gap: 10px; }
+    .countdown strong { font-size: 1.15rem; }
+    .countdown small { color: rgba(255,255,255,.74); }
+    .progress-track { height: 6px; margin-top: 10px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.16); }
+    .progress-fill { height: 100%; width: 0; border-radius: inherit; background: #ffe4a8; transition: width .4s ease; }
+
+    .card {
+      margin-top: 14px;
+      padding: 18px;
+      border: 1px solid rgba(7,86,103,.10);
+      border-radius: 22px;
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 8px 22px rgba(21,76,86,.07);
+      backdrop-filter: blur(10px);
+    }
+    .card-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .card-title h2 { margin: 0; font-size: 1.05rem; }
+    .subtle { color: var(--muted); font-size: .78rem; }
+
+    .time-control { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+    .time-field label { display: block; margin-bottom: 7px; color: var(--muted); font-size: .78rem; font-weight: 800; }
+    .time-field input {
+      width: 100%;
+      min-height: 50px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--ink);
+      background: var(--white);
+      font-size: 1.25rem;
+      font-weight: 850;
+    }
+    .now-btn {
+      min-height: 50px;
+      padding: 0 15px;
+      border: 0;
+      border-radius: 14px;
+      color: var(--white);
+      background: var(--ocean);
+      font-weight: 850;
+    }
+    .shift-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 9px; }
+    .shift-btn {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--ocean-deep);
+      background: var(--ocean-soft);
+      font-weight: 800;
+    }
+    .plan-grid { display: grid; grid-template-columns: 1.1fr .9fr .9fr; gap: 9px; }
+    .plan-field label { display: block; margin-bottom: 7px; color: var(--muted); font-size: .75rem; font-weight: 850; }
+    .plan-field input {
+      width: 100%;
+      min-height: 50px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--ink);
+      background: var(--white);
+      font-size: 1.08rem;
+      font-weight: 900;
+      text-align: center;
+    }
+    .traffic-btn {
+      width: 100%;
+      min-height: 50px;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 14px;
+      color: var(--white);
+      background: var(--ocean-deep);
+      font-weight: 900;
+    }
+    .traffic-note { margin: 8px 2px 0; color: var(--muted); font-size: .75rem; line-height: 1.5; }
+    .live-dot { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; background: #81d4b4; box-shadow: 0 0 0 4px rgba(129,212,180,.15); }
+    .install-card { display: none; align-items: center; justify-content: space-between; gap: 12px; }
+    .install-card.show { display: flex; }
+    .install-card strong { display: block; }
+    .install-card p { margin: 3px 0 0; color: var(--muted); font-size: .8rem; }
+    .install-btn { min-height: 42px; padding: 0 14px; border: 0; border-radius: 12px; color: var(--white); background: var(--ocean); font-weight: 850; }
+    .sheet-backdrop {
+      position: fixed;
+      z-index: 50;
+      inset: 0;
+      display: none;
+      align-items: end;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(13,39,44,.42);
+    }
+    .sheet-backdrop.show { display: flex; }
+    .sheet {
+      width: min(100%, 520px);
+      padding: 20px;
+      border-radius: 24px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+    .sheet h2 { margin: 0; font-size: 1.16rem; }
+    .sheet p { margin: 7px 0 14px; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+    .minute-picks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .minute-picks button { min-height: 48px; border: 1px solid var(--line); border-radius: 13px; color: var(--ocean-deep); background: var(--ocean-soft); font-weight: 900; }
+    .custom-minute { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 9px; }
+    .custom-minute input { min-width: 0; min-height: 48px; padding: 0 12px; border: 1px solid var(--line); border-radius: 13px; font-size: 1rem; }
+    .custom-minute button, .sheet-close { min-height: 48px; padding: 0 15px; border: 0; border-radius: 13px; color: var(--white); background: var(--ocean); font-weight: 900; }
+    .sheet-close { width: 100%; margin-top: 9px; color: var(--ocean-deep); background: #eef4f4; }
+
+    .timeline { position: relative; margin-top: 2px; }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 60px;
+      top: 15px;
+      bottom: 20px;
+      width: 2px;
+      background: var(--line);
+    }
+    .timeline-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 48px 18px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 0 0 19px;
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-time { padding-top: 2px; color: var(--muted); font-size: .83rem; font-weight: 850; font-variant-numeric: tabular-nums; text-align: right; }
+    .timeline-dot {
+      position: relative;
+      z-index: 1;
+      width: 14px;
+      height: 14px;
+      margin: 3px auto 0;
+      border: 3px solid var(--white);
+      border-radius: 50%;
+      background: var(--line);
+      box-shadow: 0 0 0 1px var(--line);
+    }
+    .timeline-item.done .timeline-dot { background: var(--ocean); box-shadow: 0 0 0 1px var(--ocean); }
+    .timeline-item.current .timeline-dot { background: var(--sun); box-shadow: 0 0 0 4px rgba(244,162,97,.18); }
+    .timeline-item.current .timeline-name { color: var(--ocean-deep); }
+    .timeline-name { font-weight: 850; line-height: 1.25; }
+    .timeline-desc { margin-top: 3px; color: var(--muted); font-size: .82rem; line-height: 1.45; }
+
+    .route-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 7px;
+      line-height: 1.8;
+    }
+    .route-chip { padding: 4px 8px; border-radius: 9px; color: var(--ocean-deep); background: var(--ocean-soft); font-weight: 800; }
+    .route-arrow { color: var(--muted); }
+    .gle-note { margin: 12px 0 0; padding: 11px 12px; border-radius: 13px; color: #654d22; background: #fff1cf; font-size: .85rem; line-height: 1.55; }
+
+    .parking-list { display: grid; gap: 9px; }
+    .parking-item { display: grid; grid-template-columns: 34px 1fr; gap: 11px; padding: 12px; border-radius: 15px; background: #f4faf9; }
+    .parking-item.best { background: #e5f5ee; }
+    .parking-rank { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: var(--white); background: var(--ocean); font-weight: 900; }
+    .parking-item strong { display: block; margin-bottom: 3px; }
+    .parking-item p { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+
+    .alert {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      color: #604923;
+      background: #fff0cb;
+    }
+    .alert strong { display: block; margin-bottom: 4px; }
+    .alert p { margin: 0; font-size: .84rem; line-height: 1.5; }
+
+    .check-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .check-item { padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--white); font-size: .86rem; font-weight: 750; }
+
+    .source-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin: 18px 0 0; }
+    .source-links a { color: var(--ocean-deep); font-size: .78rem; font-weight: 750; text-decoration: none; }
+    .footnote { margin: 9px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.5; text-align: center; }
+
+    .bottom-actions {
+      position: fixed;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px max(14px, env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-right));
+      background: linear-gradient(180deg, rgba(248,252,251,0), rgba(248,252,251,.96) 28%);
+    }
+    .action-wrap { width: min(100%, 760px); margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 9px; }
+    .nav-btn, .drive-btn {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 17px;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 10px 24px rgba(7,86,103,.18);
+    }
+    .nav-btn { color: var(--white); background: var(--ocean); }
+    .drive-btn { min-width: 104px; padding: 0 14px; color: var(--ocean-deep); background: var(--white); border: 1px solid var(--line); }
+
+    .drive-mode .app { width: min(100%, 920px); padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+    .drive-mode .topbar, .drive-mode .support-section, .drive-mode .source-links, .drive-mode .footnote { display: none; }
+    .drive-mode .hero { min-height: calc(100vh - 126px - env(safe-area-inset-bottom)); display: flex; flex-direction: column; justify-content: center; border-radius: 24px; }
+    .drive-mode .next-step { font-size: clamp(3rem, 12vw, 6rem); }
+    .drive-mode .next-detail { font-size: clamp(1.08rem, 4vw, 1.8rem); }
+    .drive-mode .route-meta span { font-size: 1rem; }
+    .drive-mode .countdown strong { font-size: 1.6rem; }
+    .drive-mode .drive-btn { color: var(--white); background: var(--danger); border-color: transparent; }
+
+    @media (max-width: 430px) {
+      .app { padding-left: 12px; padding-right: 12px; }
+      .hero, .card { border-radius: 20px; }
+      .check-grid { grid-template-columns: 1fr; }
+      .time-control { grid-template-columns: 1fr; }
+      .plan-grid { grid-template-columns: 1fr 1fr; }
+      .plan-field:first-child { grid-column: 1 / -1; }
+      .now-btn { width: 100%; }
+    }
+    @media (orientation: landscape) and (max-height: 520px) {
+      .drive-mode .app { padding-top: 10px; }
+      .drive-mode .hero { min-height: calc(100vh - 88px); padding: 16px 22px; }
+      .drive-mode .next-label { margin-top: 10px; }
+      .drive-mode .next-step { font-size: clamp(2.5rem, 8vw, 4.5rem); }
+      .drive-mode .countdown { margin-top: 10px; }
+      .bottom-actions { padding-top: 5px; padding-bottom: 5px; }
+      .nav-btn, .drive-btn { min-height: 48px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <div class="brand-small">HIGH IN COFFEE</div>
+        <h1>海癮咖啡・開車時間軸</h1>
+      </div>
+      <div class="today-pill" id="todayLabel">今天</div>
+    </header>
+
+    <section class="hero" aria-live="polite">
+      <div class="route-meta">
+        <span id="routeMeta">🚙 目前28分鐘</span>
+        <span>📍 27.9公里</span>
+        <span><i class="live-dot"></i><span id="trafficStamp">上午已查</span></span>
+      </div>
+      <div class="next-label" id="statusLabel">建議出發時間</div>
+      <h2 class="next-step" id="nextStep">12:00 出發</h2>
+      <p class="next-detail" id="nextDetail">12:30抵達；已含5分鐘找停車位。</p>
+      <div class="countdown">
+        <div><small id="countdownCaption">距離建議出發</small><br><strong id="countdownText">--</strong></div>
+        <small id="arrivalText">目標 12:30 抵達</small>
+      </div>
+      <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+    </section>
+
+    <section class="card support-section">
+      <div class="card-title"><h2>自動算幾點出門</h2><span class="subtle">抵達時間－車程－停車</span></div>
+      <div class="plan-grid">
+        <div class="plan-field">
+          <label for="arrivalTime">想幾點抵達</label>
+          <input id="arrivalTime" type="time" value="12:30" aria-label="希望抵達時間">
+        </div>
+        <div class="plan-field">
+          <label for="routeMinutes">導航車程</label>
+          <input id="routeMinutes" type="number" min="15" max="90" value="28" inputmode="numeric" aria-label="導航顯示車程分鐘">
+        </div>
+        <div class="plan-field">
+          <label for="parkingBuffer">停車緩衝</label>
+          <input id="parkingBuffer" type="number" min="0" max="30" value="5" inputmode="numeric" aria-label="停車緩衝分鐘">
+        </div>
+      </div>
+      <button class="traffic-btn" id="checkTraffic" type="button">開Google Maps確認即時車程</button>
+      <p class="traffic-note">Google Maps不允許一般PWA直接讀取即時路況；看完導航顯示的分鐘數，回來點一下即可重新計算。</p>
+    </section>
+
+    <section class="card install-card support-section" id="installCard">
+      <div><strong>加到手機主畫面</strong><p>之後可像App一樣開啟，路線與停車資訊也能離線看。</p></div>
+      <button class="install-btn" id="installApp" type="button">安裝</button>
+    </section>
+
+    <section class="card support-section" id="timelineSection">
+      <div class="card-title"><h2>今天的時間軸</h2><span class="subtle" id="timelineSummary">12:00 → 13:10</span></div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+
+    <section class="card support-section">
+      <div class="card-title"><h2>開車路線</h2><span class="subtle">走國1＋國3最快</span></div>
+      <div class="route-line" aria-label="開車路線">
+        <span class="route-chip">竹北</span><span class="route-arrow">→</span>
+        <span class="route-chip">國1南下</span><span class="route-arrow">→</span>
+        <span class="route-chip">新竹系統</span><span class="route-arrow">→</span>
+        <span class="route-chip">國3南下</span><span class="route-arrow">→</span>
+        <span class="route-chip">115西濱出口</span>
+      </div>
+      <div class="gle-note">🚘 下交流道後走龍江街 → 龍江街273巷 → 竹圍街。最後約1.5公里道路較小，你的GLE請放慢，會車時不要太貼路肩。</div>
+    </section>
+
+    <section class="card support-section">
+      <div class="card-title"><h2>停車順序</h2><span class="subtle">少走路優先</span></div>
+      <div class="parking-list">
+        <div class="parking-item best">
+          <div class="parking-rank">1</div>
+          <div><strong>先找基地旁空地</strong><p>距海癮最近，但只有少數車位。12:25–12:35抵達最理想。</p></div>
+        </div>
+        <div class="parking-item">
+          <div class="parking-rank">2</div>
+          <div><strong>龍江街273巷合法路邊位</strong><p>只停白線或現場開放處，不並排、不擋出入口，並保留GLE會車空間。</p></div>
+        </div>
+        <div class="parking-item">
+          <div class="parking-rank">3</div>
+          <div><strong>龍鳳漁港停車場</strong><p>最後備案，車位較多但步行約15分鐘，不符合這次少走路需求。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card support-section">
+      <div class="card-title"><h2>行前注意</h2><span class="subtle">週末13:00–18:00</span></div>
+      <div class="check-grid">
+        <div class="check-item">📱 出發前看官方IG有沒有臨休</div>
+        <div class="check-item">☔ 帶雨傘與桐桐替換衣物</div>
+        <div class="check-item">💵 準備現金較保險</div>
+        <div class="check-item">👟 桐桐穿包鞋，避開碎貝殼</div>
+      </div>
+      <div class="alert">
+        <div>🌦️</div>
+        <div><strong>今天午後留意雷陣雨</strong><p>苗栗白天為晴、午後短暫雷陣雨，降雨機率30%。若海邊風雨變大就不要下水，店家也可能因天候臨時公休。</p></div>
+      </div>
+    </section>
+
+    <div class="source-links support-section">
+      <a href="https://www.instagram.com/high_in_coffee/" target="_blank" rel="noopener">官方IG</a>
+      <a href="https://www.cwa.gov.tw/V8/C/W/Town/Town.html?TID=1000504" target="_blank" rel="noopener">竹南天氣</a>
+    </div>
+    <p class="footnote support-section">路況與資訊更新：2026/8/30 上午。出發後請以Google Maps即時指示及現場標誌為準；行車中請由乘客操作。</p>
+  </main>
+
+  <div class="bottom-actions">
+    <div class="action-wrap">
+      <a class="nav-btn" href="https://www.google.com/maps/dir/%E7%AB%B9%E5%8C%97%E5%B8%82+%E6%96%B0%E7%AB%B9%E7%B8%A3/%E6%B5%B7%E7%99%AE%E5%92%96%E5%95%A1+High+IN+coffee(%E6%AF%8F%E9%80%B1%E5%85%AD%E6%97%A5%E7%87%9F%E6%A5%AD%EF%BC%8C%E5%85%AC%E4%BC%91%E6%97%A5%E4%BB%A5%E7%B2%89%E5%B0%88%E7%82%BA%E4%B8%BB%EF%BC%8C%E5%A4%A9%E5%80%99%E4%B8%8D%E4%BD%B3%E5%85%AC%E4%BC%91%EF%BC%89+350%E8%8B%97%E6%A0%97%E7%B8%A3%E7%AB%B9%E5%8D%97%E9%8E%AE90%E8%99%9F/@24.7645102,120.7698475,11z/data=!3m1!4b1!4m14!4m13!1m5!1m1!1s0x34683690a89749c9:0xb964e0573e17cc17!2m2!1d120.9933678!2d24.8346871!1m5!1m1!1s0x3469b3894d2b58b9:0x3f60ca11eeea9534!2m2!1d120.8531152!2d24.6947798!3e0?entry=ttu&amp;g_ep=EgoyMDI2MDgyNi4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener">開啟Google導航 🔗</a>
+      <button class="drive-btn" id="driveMode" type="button" aria-label="切換開車模式">🚙 開車模式</button>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="trafficSheet" role="dialog" aria-modal="true" aria-labelledby="trafficSheetTitle">
+    <div class="sheet">
+      <h2 id="trafficSheetTitle">導航現在顯示幾分鐘？</h2>
+      <p>選完會立刻重算建議出發時間。若Google Maps仍停在前景，先回到這個App。</p>
+      <div class="minute-picks">
+        <button type="button" data-minutes="25">25分</button>
+        <button type="button" data-minutes="30">30分</button>
+        <button type="button" data-minutes="35">35分</button>
+        <button type="button" data-minutes="40">40分</button>
+      </div>
+      <div class="custom-minute">
+        <input id="customMinutes" type="number" min="15" max="90" inputmode="numeric" placeholder="其他分鐘數" aria-label="其他車程分鐘數">
+        <button id="saveCustomMinutes" type="button">套用</button>
+      </div>
+      <button class="sheet-close" id="closeTrafficSheet" type="button">先用原本時間</button>
+    </div>
+  </div>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>

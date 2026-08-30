@@ -1,0 +1,20 @@
+海癮咖啡・出發提醒 PWA
+
+部署到 GitHub Pages：
+1. 將本資料夾內全部檔案放到儲存庫根目錄。
+2. GitHub → Settings → Pages。
+3. Source 選 Deploy from a branch，Branch 選 main / root。
+4. 等待網址產生後，用 Safari 開啟。
+5. iPhone 點「分享」→「加入主畫面」。
+
+即時車程使用方式：
+1. 在首頁設定想抵達的時間。
+2. 點「開Google Maps確認即時車程」。
+3. 看完導航顯示的分鐘數後回到PWA。
+4. 點25／30／35／40分或輸入其他分鐘數。
+5. PWA會重新倒推建議出發時間。
+
+注意：
+- 一般PWA無法直接讀取Google Maps的即時路況，必須由使用者確認分鐘數。
+- 真正行車轉向請以Google Maps為準。
+- 行車中請由乘客操作。

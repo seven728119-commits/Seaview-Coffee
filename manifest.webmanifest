@@ -1,0 +1,26 @@
+{
+  "name": "海癮咖啡・出發提醒",
+  "short_name": "海癮出發",
+  "description": "從竹北前往海癮咖啡的出發時間、路線與停車提醒",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef9fb",
+  "theme_color": "#087f8c",
+  "lang": "zh-Hant-TW",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
